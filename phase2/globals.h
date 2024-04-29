@@ -14,6 +14,7 @@ extern struct list_head readyQueue;
 extern struct list_head blockedPCBs[SEMDEVLEN - 1];
 extern passupvector_t* passupvector;
 extern pcb_t* ssi_pcb;
+extern pcb_t* test_pcb;
 extern pcb_t* current_process;
 extern struct list_head waitingForClock;
 

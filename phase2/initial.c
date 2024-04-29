@@ -15,6 +15,7 @@ struct list_head readyQueue;
 struct list_head blockedPCBs[SEMDEVLEN - 1];
 passupvector_t* passupvector;
 pcb_t* ssi_pcb;
+pcb_t* test_pcb;
 pcb_t* current_process;
 struct list_head waitingForClock;
 
@@ -109,7 +110,7 @@ int main(void) {
 
 
     // Allocate the second process
-    pcb_t* test_pcb = allocPcb();
+    test_pcb = allocPcb();
     insertInList(test_pcb, READYQUEUE_LOCATION);
     process_count++;
     // Set stack pointer of the process to RAMTOP - (2 * PAGESIZE)
