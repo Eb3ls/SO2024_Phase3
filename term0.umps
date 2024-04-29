@@ -1,0 +1,326 @@
+Don't Panic.
+p2 started correctly
+p2 get pid successfully
+p2 is OK
+p1 knows p2 ended
+p3 started correctly
+p3 - CLOCKWAIT OK
+p3 - CPU time correctly maintained
+p1 knows p3 ended
+hp_p1 starts
+first incarnation of p4 starts
+hp_p2 starts
+second incarnation of p4 starts
+p4 is OK
+p1 knows p4's first incarnation ended
+p1 knows p4's second incarnation ended
+p5 starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+Bus Error (as expected): Access non-existent memory
+p5a starts
+B
