@@ -35,11 +35,11 @@ all : kernel.core.umps
 kernel.core.umps : kernel
 	umps3-elf2umps -k $<
 
-kernel : ./phase1/msg.o ./phase1/pcb.o ./phase2/initial.o ./phase2/scheduler.o ./phase2/SSI.o ./phase2/interrupts.o ./phase2/utils.o ./phase2/syscall.o ./phase2/p2test.o crtso.o libumps.o
+kernel : ./phase1/msg.o ./phase1/pcb.o ./phase2/initial.o ./phase2/scheduler.o ./phase2/SSI.o ./phase2/interrupts.o ./phase2/utils.o ./phase2/syscall.o ./phase3/initProc.o ./phase3/p3test.o ./phase3/sst.o ./phase3/sysSupport.o ./phase3/vmSupport.o crtso.o libumps.o
 	$(LD) -o $@ $^ $(LDFLAGS)
 
 clean :
-	-rm -f *.o ./phase1/*.o ./phase2/*.o kernel kernel.*.umps
+	-rm -f *.o ./phase1/*.o ./phase2/*.o ./phase3/*.o kernel kernel.*.umps
 
 # Pattern rule for assembly modules
 %.o : %.S

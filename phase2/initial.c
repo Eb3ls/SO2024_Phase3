@@ -123,8 +123,6 @@ int main(void) {
     // Kernel mode enabled, interrupts enabled, local timer enabled
     test_pcb->p_s.status = ALLOFF | IEPON | IMON | TEBITON;
 
-    current_process = test_pcb;
-
     scheduling();
 
     return 0;

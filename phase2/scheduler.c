@@ -4,7 +4,7 @@ void scheduling(){
     current_process = removeProcQ(&readyQueue);
     if (current_process != NULL){
         // Load PLT timer
-        setTIMER(TIMESLICE);
+        setTIMER(TIMESLICE * (*(int *)TIMESCALEADDR));
         LDST(&current_process->p_s);
     }
     else{

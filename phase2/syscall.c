@@ -85,7 +85,9 @@ void SYSCALLHandler(){
     if((state->status & USERPON) == USERPON){
         // If the caller is a user process, it cannot make a SYSCALL
         // Set the Cause.excCode register to RI
-        state->cause = PRIVINSTR;
+        // Correction from tutors
+        state->cause = state->cause & CLEAREXECCODE;
+        state->cause = state->cause | (PRIVINSTR << CAUSESHIFT);
         passUpOrDie(GENERALEXCEPT);
     }
     else{

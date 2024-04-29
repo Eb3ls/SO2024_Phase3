@@ -5,7 +5,6 @@
 void returnToFlow(){
     state_t* state = (state_t*) BIOSDATAPAGE;
     state->pc_epc += WORDLEN;
-    state->status = state->status | IECON; // Non so se è giusto, anzi
     LDST(state);
 }
 
