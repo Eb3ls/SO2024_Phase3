@@ -1,16 +1,19 @@
 #include "vmSupport.h"
 #include "sst.h"
+#include "sysSupport.h"
 
-state_t swap_mutex_state, sst1_state, sst2_state, sst3_state, sst4_state, sst5_state, sst6_state, sst7_state, sst8_state;
+state_t swap_mutex_state, sst1_state, sst2_state, sst3_state, sst4_state, sst5_state, sst6_state, sst7_state, sst8_state, uproc1_state;
 
-pcb_t *swap_mutex_pcb, *sst1_pcb, *sst2_pcb, *sst3_pcb, *sst4_pcb, *sst5_pcb, *sst6_pcb, *sst7_pcb, *sst8_pcb;
+pcb_t *swap_mutex_pcb, *sst1_pcb, *sst2_pcb, *sst3_pcb, *sst4_pcb, *sst5_pcb, *sst6_pcb, *sst7_pcb, *sst8_pcb, *uproc1_pcb;
 
-pcb_t* create_process(state_t *s)
+support_t support_structs[9]; // 0 is not used, 1-8 are used for user support structures, to match ASID
+
+pcb_t* create_process(state_t *s, support_t *supp)
 {
     pcb_t *p;
     ssi_create_process_t ssi_create_process = {
         .state = s,
-        .support = NULL,
+        .support = supp,
     };
     ssi_payload_t payload = {
         .service_code = CREATEPROCESS,
@@ -19,6 +22,29 @@ pcb_t* create_process(state_t *s)
     SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)&payload, 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&p), 0);
     return p;
+}
+
+void initialize_support_struct(support_t* support, unsigned int asid){
+    support->sup_asid = asid;
+
+    // Commentato perchè gli stati iniziali sono già settati a 0
+    // support->sup_exceptState[0] = 0; // STATO PRIMA DEL PAGE FAULT
+    // support->sup_exceptState[1] = 0; // STATO PRIMA DEL GENERAL EXCEPTION
+
+    unsigned int stackTLB_array[500];
+    unsigned int stackGen_array[500];
+    
+    // CONTESTO PER LA GESTIONE DEL PAGE FAULT
+    support->sup_exceptContext[0].stackPtr = (memaddr) &(stackTLB_array[499]);
+    support->sup_exceptContext[0].status = ALLOFF | IEPON | IMON | TEBITON;
+    support->sup_exceptContext[0].pc = (memaddr)pageFaultHandler;
+    
+    // COSTESTO PER LA GESTIONE DEL GENERAL EXCEPTION
+    support->sup_exceptContext[1].stackPtr = (memaddr) &(stackGen_array[499]);
+    support->sup_exceptContext[1].status = ALLOFF | IEPON | IMON | TEBITON;
+    support->sup_exceptContext[1].pc = (memaddr)generalExceptionHandler;
+    
+    // IMPOSTARE LA PAGE TABLE DEL PROCESSO!
 }
 
 void test()
@@ -36,7 +62,7 @@ void test()
     swap_mutex_state.pc_epc = (memaddr)swapMutex_entry_point;
     swap_mutex_state.status = ALLOFF | IEPON | IMON;
     
-    swap_mutex_pcb = create_process(&swap_mutex_state);
+    swap_mutex_pcb = create_process(&swap_mutex_state, NULL);
 
     // Inizializzazione dei processi SST
     STST(&sst1_state);
@@ -44,56 +70,56 @@ void test()
     sst1_state.pc_epc = (memaddr)sst_entry_point;
     sst1_state.status = ALLOFF | IEPON | IMON;
 
-    sst1_pcb = create_process(&sst1_state);
+    sst1_pcb = create_process(&sst1_state, NULL);
 
     STST(&sst2_state);
     sst2_state.reg_sp = sst1_state.reg_sp - (2 * PAGESIZE);
     sst2_state.pc_epc = (memaddr)sst_entry_point;
     sst2_state.status = ALLOFF | IEPON | IMON;
 
-    sst2_pcb = create_process(&sst2_state);
+    sst2_pcb = create_process(&sst2_state, NULL);
 
     STST(&sst3_state);
     sst3_state.reg_sp = sst2_state.reg_sp - (2 * PAGESIZE);
     sst3_state.pc_epc = (memaddr)sst_entry_point;
     sst3_state.status = ALLOFF | IEPON | IMON;
 
-    sst3_pcb = create_process(&sst3_state);
+    sst3_pcb = create_process(&sst3_state, NULL);
 
     STST(&sst4_state);
     sst4_state.reg_sp = sst3_state.reg_sp - (2 * PAGESIZE);
     sst4_state.pc_epc = (memaddr)sst_entry_point;
     sst4_state.status = ALLOFF | IEPON | IMON;
 
-    sst4_pcb = create_process(&sst4_state);
+    sst4_pcb = create_process(&sst4_state, NULL);
     
     STST(&sst5_state);
     sst5_state.reg_sp = sst4_state.reg_sp - (2 * PAGESIZE);
     sst5_state.pc_epc = (memaddr)sst_entry_point;
     sst5_state.status = ALLOFF | IEPON | IMON;
 
-    sst5_pcb = create_process(&sst5_state);
+    sst5_pcb = create_process(&sst5_state, NULL);
 
     STST(&sst6_state);
     sst6_state.reg_sp = sst5_state.reg_sp - (2 * PAGESIZE);
     sst6_state.pc_epc = (memaddr)sst_entry_point;
     sst6_state.status = ALLOFF | IEPON | IMON;
 
-    sst6_pcb = create_process(&sst6_state);
+    sst6_pcb = create_process(&sst6_state, NULL);
 
     STST(&sst7_state);
     sst7_state.reg_sp = sst6_state.reg_sp - (2 * PAGESIZE);
     sst7_state.pc_epc = (memaddr)sst_entry_point;
     sst7_state.status = ALLOFF | IEPON | IMON;
 
-    sst7_pcb = create_process(&sst7_state);
+    sst7_pcb = create_process(&sst7_state, NULL);
 
     STST(&sst8_state);
     sst8_state.reg_sp = sst7_state.reg_sp - (2 * PAGESIZE);
     sst8_state.pc_epc = (memaddr)sst_entry_point;
     sst8_state.status = ALLOFF | IEPON | IMON;
 
-    sst8_pcb = create_process(&sst8_state);
+    sst8_pcb = create_process(&sst8_state, NULL);
 
     SYSCALL(RECEIVEMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)sst1_pcb, 0, 0);
@@ -104,6 +130,23 @@ void test()
     SYSCALL(RECEIVEMESSAGE, (unsigned int)sst6_pcb, 0, 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)sst7_pcb, 0, 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)sst8_pcb, 0, 0);
+
+
+    // Inizializzazione del processo utente 1
+    STST(&uproc1_state);
+    unsigned int uproc1_number = 1;
+
+    uproc1_state.pc_epc = 0x800000B0;
+    uproc1_state.reg_t9 = 0x800000B0;
+    uproc1_state.reg_sp = 0xC0000000;
+    // State will be user mode, interrupts enabled, local timer enabled
+    uproc1_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON;
+    uproc1_state.entry_hi = (uproc1_number & 0xFF) << ASIDSHIFT;
+
+    // Initialize the support struct
+    initialize_support_struct(&support_structs[uproc1_number], uproc1_number);
+
+    uproc1_pcb = create_process(&uproc1_state, &support_structs[uproc1_number]);
 
     HALT();
 }
