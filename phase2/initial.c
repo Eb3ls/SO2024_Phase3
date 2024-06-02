@@ -20,10 +20,19 @@ pcb_t* current_process;
 struct list_head waitingForClock;
 
 void uTLB_RefillHandler() {
-    setENTRYHI(0x80000000);
-    setENTRYLO(0x00000000);
+    // Get the state of the current process
+    state_t* state = (state_t*) BIOSDATAPAGE;
+
+    // Get the entryHi register
+    unsigned int entryHi = state->entry_hi;
+    
+    // Get VPN
+    unsigned int vpn = (entryHi >> VPNSHIFT) & GETPAGENO;
+    pteEntry_t entry = current_process->p_supportStruct->sup_privatePgTbl[vpn];
+    setENTRYHI(entry.pte_entryHI);
+    setENTRYLO(entry.pte_entryLO);
     TLBWR();
-    LDST((state_t*) 0x0FFFF000);
+    LDST(state);
 }
 
 void passUpOrDie(unsigned int relatedConst) {

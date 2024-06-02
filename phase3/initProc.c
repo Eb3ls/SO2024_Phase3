@@ -44,13 +44,24 @@ void initialize_support_struct(support_t* support, unsigned int asid){
     support->sup_exceptContext[1].status = ALLOFF | IEPON | IMON | TEBITON;
     support->sup_exceptContext[1].pc = (memaddr)generalExceptionHandler;
     
-    // IMPOSTARE LA PAGE TABLE DEL PROCESSO!
+    // INIZIALIZZAZIONE DELLA PAGE TABLE PRIVATA
+    for(int i = 0; i < 31; i++){
+        support->sup_privatePgTbl[i].pte_entryHI = ((0x80000 + i) << VPNSHIFT) | (asid << ASIDSHIFT);
+        support->sup_privatePgTbl[i].pte_entryLO = DIRTYON;
+    }
+    support->sup_privatePgTbl[31].pte_entryHI = (0xBFFFF << VPNSHIFT) | (asid << ASIDSHIFT);
+    support->sup_privatePgTbl[31].pte_entryLO = DIRTYON;
 }
 
 void test()
 {
-    unsigned int swap_pool_address_base = 0x20000000 + (32 * PAGESIZE);
+    unsigned int swap_pool_address_base = RAMSTART + (32 * PAGESIZE);
     initSwapStruct();
+
+    // Inizializzazione delle strutture di supporto
+    for(int i = 1; i < 9; i++){
+        initialize_support_struct(&support_structs[i], i);
+    }
 
     // IMPORTANTE:
     // ATTUALMENTE I PROCESSI FIGLI HANNO PERMESSO KERNEL
@@ -61,7 +72,7 @@ void test()
     swap_mutex_state.reg_sp -= (2 * PAGESIZE);  // Non sappiamo bene quanto lasciare di spazio per lo stack pointer tra un processo e l'altro
     swap_mutex_state.pc_epc = (memaddr)swapMutex_entry_point;
     swap_mutex_state.status = ALLOFF | IEPON | IMON;
-    
+
     swap_mutex_pcb = create_process(&swap_mutex_state, NULL);
 
     // Inizializzazione dei processi SST
@@ -70,56 +81,56 @@ void test()
     sst1_state.pc_epc = (memaddr)sst_entry_point;
     sst1_state.status = ALLOFF | IEPON | IMON;
 
-    sst1_pcb = create_process(&sst1_state, NULL);
+    sst1_pcb = create_process(&sst1_state, &support_structs[1]);
 
     STST(&sst2_state);
     sst2_state.reg_sp = sst1_state.reg_sp - (2 * PAGESIZE);
     sst2_state.pc_epc = (memaddr)sst_entry_point;
     sst2_state.status = ALLOFF | IEPON | IMON;
 
-    sst2_pcb = create_process(&sst2_state, NULL);
+    sst2_pcb = create_process(&sst2_state, &support_structs[2]);
 
     STST(&sst3_state);
     sst3_state.reg_sp = sst2_state.reg_sp - (2 * PAGESIZE);
     sst3_state.pc_epc = (memaddr)sst_entry_point;
     sst3_state.status = ALLOFF | IEPON | IMON;
 
-    sst3_pcb = create_process(&sst3_state, NULL);
+    sst3_pcb = create_process(&sst3_state, &support_structs[3]);
 
     STST(&sst4_state);
     sst4_state.reg_sp = sst3_state.reg_sp - (2 * PAGESIZE);
     sst4_state.pc_epc = (memaddr)sst_entry_point;
     sst4_state.status = ALLOFF | IEPON | IMON;
 
-    sst4_pcb = create_process(&sst4_state, NULL);
+    sst4_pcb = create_process(&sst4_state, &support_structs[4]);
     
     STST(&sst5_state);
     sst5_state.reg_sp = sst4_state.reg_sp - (2 * PAGESIZE);
     sst5_state.pc_epc = (memaddr)sst_entry_point;
     sst5_state.status = ALLOFF | IEPON | IMON;
 
-    sst5_pcb = create_process(&sst5_state, NULL);
+    sst5_pcb = create_process(&sst5_state, &support_structs[5]);
 
     STST(&sst6_state);
     sst6_state.reg_sp = sst5_state.reg_sp - (2 * PAGESIZE);
     sst6_state.pc_epc = (memaddr)sst_entry_point;
     sst6_state.status = ALLOFF | IEPON | IMON;
 
-    sst6_pcb = create_process(&sst6_state, NULL);
+    sst6_pcb = create_process(&sst6_state, &support_structs[6]);
 
     STST(&sst7_state);
     sst7_state.reg_sp = sst6_state.reg_sp - (2 * PAGESIZE);
     sst7_state.pc_epc = (memaddr)sst_entry_point;
     sst7_state.status = ALLOFF | IEPON | IMON;
 
-    sst7_pcb = create_process(&sst7_state, NULL);
+    sst7_pcb = create_process(&sst7_state, &support_structs[7]);
 
     STST(&sst8_state);
     sst8_state.reg_sp = sst7_state.reg_sp - (2 * PAGESIZE);
     sst8_state.pc_epc = (memaddr)sst_entry_point;
     sst8_state.status = ALLOFF | IEPON | IMON;
 
-    sst8_pcb = create_process(&sst8_state, NULL);
+    sst8_pcb = create_process(&sst8_state, &support_structs[8]);
 
     SYSCALL(RECEIVEMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)sst1_pcb, 0, 0);
@@ -132,21 +143,18 @@ void test()
     SYSCALL(RECEIVEMESSAGE, (unsigned int)sst8_pcb, 0, 0);
 
 
-    // Inizializzazione del processo utente 1
-    STST(&uproc1_state);
-    unsigned int uproc1_number = 1;
+    // // Inizializzazione del processo utente 1
+    // STST(&uproc1_state);
+    // unsigned int uproc1_number = 1;
 
-    uproc1_state.pc_epc = 0x800000B0;
-    uproc1_state.reg_t9 = 0x800000B0;
-    uproc1_state.reg_sp = 0xC0000000;
-    // State will be user mode, interrupts enabled, local timer enabled
-    uproc1_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON;
-    uproc1_state.entry_hi = (uproc1_number & 0xFF) << ASIDSHIFT;
+    // uproc1_state.pc_epc = 0x800000B0;
+    // uproc1_state.reg_t9 = 0x800000B0;
+    // uproc1_state.reg_sp = 0xC0000000;
+    // // State will be user mode, interrupts enabled, local timer enabled
+    // uproc1_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON;
+    // uproc1_state.entry_hi = (uproc1_number & 0xFF) << ASIDSHIFT;
 
-    // Initialize the support struct
-    initialize_support_struct(&support_structs[uproc1_number], uproc1_number);
-
-    uproc1_pcb = create_process(&uproc1_state, &support_structs[uproc1_number]);
+    // uproc1_pcb = create_process(&uproc1_state, &support_structs[uproc1_number]);
 
     HALT();
 }

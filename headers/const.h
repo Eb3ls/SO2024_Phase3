@@ -60,6 +60,7 @@
 
 #define SENDMSG 1
 #define RECEIVEMSG 2
+#define PARENT 0
 
 #define CREATEPROCESS 1
 #define TERMPROCESS   2
