@@ -61,8 +61,16 @@ void nonTimerInterruptHandler(int line, int cause){
     unsigned int device_status;
     if(line == 7){
         termreg_t* devAddrBase = (termreg_t*) devAddrValue;
-        device_status = devAddrBase->transm_status;
-        devAddrBase->transm_command = ACK;
+        if(devAddrBase->transm_status != 1 && devAddrBase->transm_status != 3){
+            device_status = devAddrBase->transm_status;
+            devAddrBase->transm_command = ACK;
+            devNo = 2 * devNo;
+        }
+        else{
+            device_status = devAddrBase->recv_status;
+            devAddrBase->recv_command = ACK;
+            devNo = 2 * devNo + 1;
+        }
     }
     else{
         dtpreg_t* devAddrBase = (dtpreg_t*) devAddrValue; 

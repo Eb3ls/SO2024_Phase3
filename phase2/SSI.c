@@ -28,6 +28,8 @@ int findDevice(unsigned int devAddr){
     }
     else if(devLine >= TERMINTERRUPT){
         line = 7;
+        devNo = (devNo - ((line - 3) * 0x80)) / 0x8;
+        return 8 * (line - 3) + devNo;
     }
     // Remove the line from the device address
     devNo = (devNo - ((line - 3) * 0x80)) / 0x10;
@@ -127,7 +129,7 @@ void terminateProcess(struct pcb_t* sender, struct pcb_t* arg){
 void doIO(struct pcb_t* sender, struct ssi_do_io_t* doio){
     softBlockCount++;
 
-    unsigned int devAddr = ((unsigned int) doio->commandAddr - 0xc);
+    unsigned int devAddr = ((unsigned int) doio->commandAddr - 0x4);
     int index = findDevice(devAddr);
 
     removeFromList(sender, sender->p_location);
