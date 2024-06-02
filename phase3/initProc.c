@@ -33,17 +33,17 @@ void initialize_support_struct(support_t* support, unsigned int asid){
 
     unsigned int stackTLB_array[500];
     unsigned int stackGen_array[500];
-    
+
     // CONTESTO PER LA GESTIONE DEL PAGE FAULT
     support->sup_exceptContext[0].stackPtr = (memaddr) &(stackTLB_array[499]);
     support->sup_exceptContext[0].status = ALLOFF | IEPON | IMON | TEBITON;
     support->sup_exceptContext[0].pc = (memaddr)pageFaultHandler;
-    
+
     // COSTESTO PER LA GESTIONE DEL GENERAL EXCEPTION
     support->sup_exceptContext[1].stackPtr = (memaddr) &(stackGen_array[499]);
     support->sup_exceptContext[1].status = ALLOFF | IEPON | IMON | TEBITON;
     support->sup_exceptContext[1].pc = (memaddr)generalExceptionHandler;
-    
+
     // INIZIALIZZAZIONE DELLA PAGE TABLE PRIVATA
     for(int i = 0; i < 31; i++){
         support->sup_privatePgTbl[i].pte_entryHI = ((0x80000 + i) << VPNSHIFT) | (asid << ASIDSHIFT);
@@ -66,6 +66,7 @@ void test()
     // IMPORTANTE:
     // ATTUALMENTE I PROCESSI FIGLI HANNO PERMESSO KERNEL
     // I VERI PERMESSI PROBABILMENTE SONO: ALLOFF | USERPON | IEPON | IMON
+    // Forse anche TEBITON
 
     // Inizializzazione del processo Swap Mutex
     STST(&swap_mutex_state);
@@ -103,7 +104,7 @@ void test()
     sst4_state.status = ALLOFF | IEPON | IMON;
 
     sst4_pcb = create_process(&sst4_state, &support_structs[4]);
-    
+
     STST(&sst5_state);
     sst5_state.reg_sp = sst4_state.reg_sp - (2 * PAGESIZE);
     sst5_state.pc_epc = (memaddr)sst_entry_point;
@@ -142,19 +143,28 @@ void test()
     SYSCALL(RECEIVEMESSAGE, (unsigned int)sst7_pcb, 0, 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)sst8_pcb, 0, 0);
 
+    // TEMPORANEO! Aspettiamo che tutti gli SST abbiano finito di inizializzarsi
+    int i = 0;
+    while(i < 1000000){
+        i++;
+    }
 
-    // // Inizializzazione del processo utente 1
-    // STST(&uproc1_state);
-    // unsigned int uproc1_number = 1;
+    // Se arriviamo qua tutti gli SST sono partiti correttamente e siamo gli unici processi attivi
+    // Dobbiamo inizializzare il primo processo utente
 
-    // uproc1_state.pc_epc = 0x800000B0;
-    // uproc1_state.reg_t9 = 0x800000B0;
-    // uproc1_state.reg_sp = 0xC0000000;
-    // // State will be user mode, interrupts enabled, local timer enabled
-    // uproc1_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON;
-    // uproc1_state.entry_hi = (uproc1_number & 0xFF) << ASIDSHIFT;
+    STST(&uproc1_state);
+    unsigned int uproc1_number = 1;
 
-    // uproc1_pcb = create_process(&uproc1_state, &support_structs[uproc1_number]);
+    uproc1_state.pc_epc = UPROCSTARTADDR;
+    uproc1_state.reg_t9 = UPROCSTARTADDR;
+    uproc1_state.reg_sp = USERSTACKTOP;
+    // State will be user mode, interrupts enabled, local timer enabled
+    uproc1_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON;
+    uproc1_state.entry_hi = (uproc1_number << ASIDSHIFT);
+
+    uproc1_pcb = create_process(&uproc1_state, &support_structs[uproc1_number]);
+
+    SYSCALL(RECEIVEMESSAGE, (unsigned int)test_pcb, 0, 0);
 
     HALT();
 }

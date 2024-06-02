@@ -18,17 +18,16 @@ support_t* getSupportStruct(){
 void TLBInvalidHandler(support_t* support_struct){
     state_t* exception_state = &(support_struct->sup_exceptState[0]);
 
-    // ATTENZIONE: Probabilmente bisogna fare il get di questo dato dal campo entry_hi dello stato
-    // all'interno della support_struct e non dal campo cause dello stato dell'eccezione
-    // unsigned int cause_state = exception_state->entry_hi;
-    unsigned int cause_state = exception_state->cause;
+    unsigned int entryHi = exception_state->entry_hi;
 
     SYSCALL(SENDMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
 
-    // Get VPN and ASID from the cause register
-    unsigned int vpn = ((cause_state) >> VPNSHIFT) & GETPAGENO;
-    unsigned int asid = ((cause_state) >> ASIDSHIFT); // Dobbiamo isolare l'ASID!!
+    // Get VPN
+    unsigned int vpn = ((entryHi & GETPAGENO) >> VPNSHIFT);
+
+    // Get ASID
+    unsigned int asid = support_struct->sup_asid;
 
     // If the entry is occupied and dirty, swap it out
     if (swapTable[roundRobinPick].sw_asid != -1 && (((swapTable[roundRobinPick].sw_pte)->pte_entryLO & DIRTYON) == DIRTYON)){
