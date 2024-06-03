@@ -1,0 +1,6 @@
+#include "../phase2/globals.h"
+
+support_t* getSupportStruct();
+unsigned int doIOtoFlash(unsigned int command_address, unsigned int command_value);
+void int_to_string(int num, char* str);
+void printToTerm(char* msg);

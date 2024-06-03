@@ -8,6 +8,8 @@ pcb_t *swap_mutex_pcb, *sst1_pcb, *sst2_pcb, *sst3_pcb, *sst4_pcb, *sst5_pcb, *s
 
 support_t support_structs[9]; // 0 is not used, 1-8 are used for user support structures, to match ASID
 
+unsigned int swap_pool_address_base = RAMSTART + (32 * PAGESIZE);
+
 pcb_t* create_process(state_t *s, support_t *supp)
 {
     pcb_t *p;
@@ -55,7 +57,6 @@ void initialize_support_struct(support_t* support, unsigned int asid){
 
 void test()
 {
-    unsigned int swap_pool_address_base = RAMSTART + (32 * PAGESIZE);
     initSwapStruct();
 
     // Inizializzazione delle strutture di supporto

@@ -1,19 +1,11 @@
 #include "sysSupport.h"
+#include "utils_phase3.h"
 
 extern pcb_t* swap_mutex_pcb;
 static int roundRobinPick = 0;
 extern swap_t swapTable[2 * UPROCMAX];
 
-support_t* getSupportStruct(){
-    support_t* support_struct;
-    ssi_payload_t getsup_payload = {
-        .service_code = GETSUPPORTPTR,
-        .arg = NULL,
-    };
-    SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&getsup_payload), 0);
-    SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&support_struct), 0);
-    return support_struct;
-}
+extern unsigned int swap_pool_address_base;
 
 void TLBInvalidHandler(support_t* support_struct){
     state_t* exception_state = &(support_struct->sup_exceptState[0]);
@@ -58,20 +50,79 @@ void TLBInvalidHandler(support_t* support_struct){
     // Se siamo arrivati qui significa che quella entry è libera, quindi possiamo 
     // caricare quello che ci pare
     // Leggiamo dal device la pagina da caricare
-    // devregtr status;
-    // ssi_do_io_t do_io = {
-    //     .commandAddr = command,
-    //     .commandValue = value,
-    // };
-    // ssi_payload_t payload = {
-    //     .service_code = DOIO,
-    //     .arg = &do_io,
-    // };
-    // SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&payload), 0);
-    // SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&status), 0);
-    
-    // Quando il device ha finito di leggere la pagina, possiamo caricarla in memoria
-    // e settare la entry della TLB
+
+    unsigned int flash_address = START_DEVREG + ((4 - 3) * 0x80) + ((asid - 1) * 0x10);
+    unsigned int command_value = (vpn << 8) | FLASHREAD;
+
+    char str[20];
+
+    printToTerm("VPN: ");
+    int_to_string(vpn, str);
+    printToTerm(str);
+    printToTerm("\n");
+
+    printToTerm("ASID: ");
+    int_to_string(asid, str);
+    printToTerm(str);
+    printToTerm("\n");
+
+    printToTerm("Reading from flash\n");
+
+    printToTerm("Address: ");
+    int_to_string(flash_address, str);
+    printToTerm(str);
+    printToTerm("\n");
+
+    printToTerm("Command value: ");
+    int_to_string(command_value, str);
+    printToTerm(str);
+    printToTerm("\n");
+
+    // Troviamo l'indirizzo del campo COMMAND del device relativo all'ASID
+    unsigned int command_flash_address = flash_address + 0x4;
+
+    // Troviamo l'indirizzo del campo DATA0 del device relativo all'ASID 
+    // (In cui scrivere l'indirizzo di memoria in cui scrivere i dati letti dal device)
+    unsigned int data0_flash_address = command_flash_address + 0x4;
+
+    // Troviamo l'indirizzo iniziale della swap pool
+    void* swap_pool = (unsigned int*)swap_pool_address_base;
+    // Troviamo l'indirizzo della pagina da rimuovere dalla memoria
+    unsigned int* return_position = swap_pool + (roundRobinPick * PAGESIZE);
+
+    // Scriviamo sul campo DATA0 l'indirizzo di memoria in cui scrivere i dati letti dal device
+    // (Essenzialmente stiamo scrivendo la pagina del device in swap pool)
+    *(unsigned int*)data0_flash_address = (unsigned int)return_position;
+
+    // Eseguiamo una DOIO tramite l'SSI per avviare la lettura della pagina
+    unsigned int exit_status = doIOtoFlash(command_flash_address, command_value);
+
+    // Se la lettura ha presentato un errore, stampiamo un messaggio di errore e terminiamo
+    if (exit_status != 1){
+        printToTerm("Error in reading from flash\n");
+        programTrapHandler();
+    }
+
+    // Se siamo arrivati qui, la lettura è andata a buon fine e la pagina è stata caricata
+    // nella swap pool
+
+    printToTerm("Exit status: ");
+    int_to_string(exit_status, str);
+    printToTerm(str);
+    printToTerm("\n");
+
+    // Stampa della pagina letta (per debug) sotto forma di interi
+
+    for (int i = 0; i < 1000; i++){
+        int_to_string(return_position[i], str);
+        printToTerm(str);
+    }
+    printToTerm("\n");
+
+    // Aggiorniamo l'entry della swap table con i nuovi valori (della nuova pagina caricata)
+    // Questa parte deve essere eseguita in modo atomico senza interruzioni, quindi salviamo
+    // lo stato del processore, disabilitiamo le interruzioni, aggiorniamo la swap table e
+    // ripristiniamo lo stato del processore con SETSTATUS()
 
     unsigned int current_processor_status = ((state_t*) BIOSDATAPAGE)->status;
     setSTATUS(ALLOFF);
@@ -80,18 +131,31 @@ void TLBInvalidHandler(support_t* support_struct){
     swapTable[roundRobinPick].sw_pageNo = vpn;
     swapTable[roundRobinPick].sw_pte = &(support_struct->sup_privatePgTbl[vpn]);
 
-    support_struct->sup_privatePgTbl[vpn].pte_entryHI = (vpn << VPNSHIFT) | (asid << ASIDSHIFT);
-    // DOBBIAMO POPOLARE IL PFN, DOVREBBE ESSERE 12 (LEONARDO)
-    support_struct->sup_privatePgTbl[vpn].pte_entryLO = VALIDON | DIRTYON | (roundRobinPick << 12);
+    // Adesso dobbiamo aggiornare la entry della pagina privata del processo
+
+    // Settiamo l'entryHI della pagina
+    // Questa riga è ridondante, ma la lascio per chiarezza
+    // support_struct->sup_privatePgTbl[vpn].pte_entryHI = (entryHi >> VPNSHIFT) << VPNSHIFT | (asid << ASIDSHIFT);
+
+    // Settiamo l'entryLO della pagina
+    // Da specifiche dobbiamo settare i bit di validità e dirty
+    // Inoltre dobbiamo fornire la parte più significativa (PFN) dell'indirizzo fisico della pagina
+    // in memoria, per far si che il TLB possa tradurre correttamente l'indirizzo virtuale
+    // in indirizzo fisico
+    // ESEMPIO: Indirizzo fisico in swap pool: 0x20020030 => PFN = 0x20020 e VPN = 0x030
+    // Quindi puliamo l'indirizzo fisico da i 12 bit meno significativi
+    unsigned int pfn = (((unsigned int)return_position) >> 12);
+    support_struct->sup_privatePgTbl[vpn].pte_entryLO = (pfn << 12) | DIRTYON | VALIDON;
 
     // Settiamo la entry della TLB
     TLBCLR();
-    setENTRYHI((vpn << VPNSHIFT) | (asid << ASIDSHIFT));
-    setENTRYLO(VALIDON | DIRTYON);
+    setENTRYHI(support_struct->sup_privatePgTbl[vpn].pte_entryHI);
+    setENTRYLO(support_struct->sup_privatePgTbl[vpn].pte_entryLO);
     TLBWR();
 
     setSTATUS(current_processor_status);
 
+    // Aumentiamo il round robin pick per la prossima volta
     roundRobinPick = (roundRobinPick + 1) % (2 * UPROCMAX);
 
     SYSCALL(SENDMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
