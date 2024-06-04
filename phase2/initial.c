@@ -29,8 +29,15 @@ void uTLB_RefillHandler() {
     // Get VPN
     unsigned int vpn_number = ((entryHi & GETPAGENO) >> VPNSHIFT);
 
+    if (vpn_number > 31){
+        vpn_number = 31;
+    }
+
     pteEntry_t* entry = &(current_process->p_supportStruct->sup_privatePgTbl[vpn_number]);
-    setENTRYHI(entry->pte_entryHI);
+    // Non sappiamo perchè ma il campo entryHi, quando la richiesta viene fatta da un SST
+    // non contiene l'ASID, quindi dobbiamo settarlo manualmente
+    // setENTRYHI(entry->pte_entryHI);
+    setENTRYHI(entryHi);
     setENTRYLO(entry->pte_entryLO);
     TLBWR();
     LDST(state);

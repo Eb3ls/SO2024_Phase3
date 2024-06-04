@@ -1,6 +1,7 @@
 #include "vmSupport.h"
 #include "sst.h"
 #include "sysSupport.h"
+#include "utils_phase3.h"
 
 state_t swap_mutex_state, sst1_state, sst2_state, sst3_state, sst4_state, sst5_state, sst6_state, sst7_state, sst8_state, uproc1_state;
 
@@ -9,22 +10,6 @@ pcb_t *swap_mutex_pcb, *sst1_pcb, *sst2_pcb, *sst3_pcb, *sst4_pcb, *sst5_pcb, *s
 support_t support_structs[9]; // 0 is not used, 1-8 are used for user support structures, to match ASID
 
 unsigned int swap_pool_address_base = RAMSTART + (32 * PAGESIZE);
-
-pcb_t* create_process(state_t *s, support_t *supp)
-{
-    pcb_t *p;
-    ssi_create_process_t ssi_create_process = {
-        .state = s,
-        .support = supp,
-    };
-    ssi_payload_t payload = {
-        .service_code = CREATEPROCESS,
-        .arg = &ssi_create_process,
-    };
-    SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)&payload, 0);
-    SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&p), 0);
-    return p;
-}
 
 void initialize_support_struct(support_t* support, unsigned int asid){
     support->sup_asid = asid;
@@ -143,27 +128,6 @@ void test()
     SYSCALL(RECEIVEMESSAGE, (unsigned int)sst6_pcb, 0, 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)sst7_pcb, 0, 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)sst8_pcb, 0, 0);
-
-    // TEMPORANEO! Aspettiamo che tutti gli SST abbiano finito di inizializzarsi
-    int i = 0;
-    while(i < 1000000){
-        i++;
-    }
-
-    // Se arriviamo qua tutti gli SST sono partiti correttamente e siamo gli unici processi attivi
-    // Dobbiamo inizializzare il primo processo utente
-
-    STST(&uproc1_state);
-    unsigned int uproc1_number = 1;
-
-    uproc1_state.pc_epc = UPROCSTARTADDR;
-    uproc1_state.reg_t9 = UPROCSTARTADDR;
-    uproc1_state.reg_sp = USERSTACKTOP;
-    // State will be user mode, interrupts enabled, local timer enabled
-    uproc1_state.status = ALLOFF | USERPON | IEPON | IMON | TEBITON;
-    uproc1_state.entry_hi = (uproc1_number << ASIDSHIFT);
-
-    uproc1_pcb = create_process(&uproc1_state, &support_structs[uproc1_number]);
 
     SYSCALL(RECEIVEMESSAGE, (unsigned int)test_pcb, 0, 0);
 

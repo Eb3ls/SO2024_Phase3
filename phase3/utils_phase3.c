@@ -1,5 +1,20 @@
 #include "utils_phase3.h"
 
+pcb_t* create_process(state_t* s, support_t* supp) {
+    pcb_t* p;
+    ssi_create_process_t ssi_create_process = {
+        .state = s,
+        .support = supp,
+    };
+    ssi_payload_t payload = {
+        .service_code = CREATEPROCESS,
+        .arg = &ssi_create_process,
+    };
+    SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)&payload, 0);
+    SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&p), 0);
+    return p;
+}
+
 support_t* getSupportStruct() {
     support_t* support_struct;
     ssi_payload_t getsup_payload = {

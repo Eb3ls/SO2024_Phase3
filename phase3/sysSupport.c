@@ -18,6 +18,10 @@ void TLBInvalidHandler(support_t* support_struct){
     // Get VPN
     unsigned int vpn = ((entryHi & GETPAGENO) >> VPNSHIFT);
 
+    if (vpn > 31){
+        vpn = 31;
+    }
+
     // Get ASID
     unsigned int asid = support_struct->sup_asid;
 
