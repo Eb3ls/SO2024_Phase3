@@ -67,6 +67,7 @@ void test()
     sst1_state.reg_sp = swap_mutex_state.reg_sp - (2 * PAGESIZE);
     sst1_state.pc_epc = (memaddr)sst_entry_point;
     sst1_state.status = ALLOFF | IEPON | IMON;
+    sst1_state.entry_hi = 1 << ASIDSHIFT;
 
     sst1_pcb = create_process(&sst1_state, &support_structs[1]);
 
@@ -74,6 +75,7 @@ void test()
     sst2_state.reg_sp = sst1_state.reg_sp - (2 * PAGESIZE);
     sst2_state.pc_epc = (memaddr)sst_entry_point;
     sst2_state.status = ALLOFF | IEPON | IMON;
+    sst2_state.entry_hi = 2 << ASIDSHIFT;
 
     sst2_pcb = create_process(&sst2_state, &support_structs[2]);
 
@@ -81,6 +83,7 @@ void test()
     sst3_state.reg_sp = sst2_state.reg_sp - (2 * PAGESIZE);
     sst3_state.pc_epc = (memaddr)sst_entry_point;
     sst3_state.status = ALLOFF | IEPON | IMON;
+    sst3_state.entry_hi = 3 << ASIDSHIFT;
 
     sst3_pcb = create_process(&sst3_state, &support_structs[3]);
 
@@ -88,6 +91,7 @@ void test()
     sst4_state.reg_sp = sst3_state.reg_sp - (2 * PAGESIZE);
     sst4_state.pc_epc = (memaddr)sst_entry_point;
     sst4_state.status = ALLOFF | IEPON | IMON;
+    sst4_state.entry_hi = 4 << ASIDSHIFT;
 
     sst4_pcb = create_process(&sst4_state, &support_structs[4]);
 
@@ -95,6 +99,7 @@ void test()
     sst5_state.reg_sp = sst4_state.reg_sp - (2 * PAGESIZE);
     sst5_state.pc_epc = (memaddr)sst_entry_point;
     sst5_state.status = ALLOFF | IEPON | IMON;
+    sst5_state.entry_hi = 5 << ASIDSHIFT;
 
     sst5_pcb = create_process(&sst5_state, &support_structs[5]);
 
@@ -102,6 +107,7 @@ void test()
     sst6_state.reg_sp = sst5_state.reg_sp - (2 * PAGESIZE);
     sst6_state.pc_epc = (memaddr)sst_entry_point;
     sst6_state.status = ALLOFF | IEPON | IMON;
+    sst6_state.entry_hi = 6 << ASIDSHIFT;
 
     sst6_pcb = create_process(&sst6_state, &support_structs[6]);
 
@@ -109,6 +115,7 @@ void test()
     sst7_state.reg_sp = sst6_state.reg_sp - (2 * PAGESIZE);
     sst7_state.pc_epc = (memaddr)sst_entry_point;
     sst7_state.status = ALLOFF | IEPON | IMON;
+    sst7_state.entry_hi = 7 << ASIDSHIFT;
 
     sst7_pcb = create_process(&sst7_state, &support_structs[7]);
 
@@ -116,6 +123,7 @@ void test()
     sst8_state.reg_sp = sst7_state.reg_sp - (2 * PAGESIZE);
     sst8_state.pc_epc = (memaddr)sst_entry_point;
     sst8_state.status = ALLOFF | IEPON | IMON;
+    sst8_state.entry_hi = 8 << ASIDSHIFT;
 
     sst8_pcb = create_process(&sst8_state, &support_structs[8]);
 

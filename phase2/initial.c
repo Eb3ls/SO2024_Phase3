@@ -34,12 +34,11 @@ void uTLB_RefillHandler() {
     }
 
     pteEntry_t* entry = &(current_process->p_supportStruct->sup_privatePgTbl[vpn_number]);
-    // Non sappiamo perchè ma il campo entryHi, quando la richiesta viene fatta da un SST
-    // non contiene l'ASID, quindi dobbiamo settarlo manualmente
-    // setENTRYHI(entry->pte_entryHI);
-    setENTRYHI(entryHi);
+
+    setENTRYHI(entry->pte_entryHI);
     setENTRYLO(entry->pte_entryLO);
     TLBWR();
+
     LDST(state);
 }
 

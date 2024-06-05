@@ -26,7 +26,7 @@ support_t* getSupportStruct() {
     return support_struct;
 }
 
-unsigned int doIOtoFlash(unsigned int command_address, unsigned int command_value) {
+unsigned int doIOSupportLevel(unsigned int command_address, unsigned int command_value) {
     unsigned int status;
     ssi_do_io_t do_io = {
         .commandAddr = (memaddr*)command_address,
@@ -39,6 +39,33 @@ unsigned int doIOtoFlash(unsigned int command_address, unsigned int command_valu
     SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&payload), 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&status), 0);
     return status;
+}
+
+unsigned int doIOFlash(unsigned int asid, unsigned int vpn, unsigned int command, unsigned int output) {
+    // Calculate the flash address
+    unsigned int device_address = START_DEVREG + ((4 - 3) * 0x80) + ((asid - 1) * 0x10);
+    unsigned int command_address = device_address + 0x4;
+    unsigned int data0_address = device_address + 0x8;
+    unsigned int command_value = (vpn << 8) | command;
+    *(((unsigned int*)data0_address)) = output;
+    return doIOSupportLevel(command_address, command_value);
+}
+
+unsigned int doIOTerminal(unsigned int asid, unsigned int command, char* msg) {
+    // Calculate the terminal address
+    unsigned int device_address = START_DEVREG + ((7 - 3) * 0x80) + ((asid - 1) * 0x10);
+    unsigned int command_address;
+    if (command == PRINTCHR) {
+        command_address = device_address + 0xc;
+    } else {
+        command_address = device_address + 0x4;
+    }
+    while (*msg != EOS) {
+        unsigned int command_value = (((unsigned int)*msg) << 8) | command;
+        doIOSupportLevel(command_address, command_value);
+        msg++;
+    }
+    return 0;
 }
 
 void int_to_string(int num, char* str) {

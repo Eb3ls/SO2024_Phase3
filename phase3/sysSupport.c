@@ -55,73 +55,46 @@ void TLBInvalidHandler(support_t* support_struct){
     // caricare quello che ci pare
     // Leggiamo dal device la pagina da caricare
 
-    unsigned int flash_address = START_DEVREG + ((4 - 3) * 0x80) + ((asid - 1) * 0x10);
-    unsigned int command_value = (vpn << 8) | FLASHREAD;
-
     char str[20];
 
-    printToTerm("VPN: ");
+    doIOTerminal(asid, PRINTCHR, "VPN: ");
     int_to_string(vpn, str);
-    printToTerm(str);
-    printToTerm("\n");
+    doIOTerminal(asid, PRINTCHR, str);
+    doIOTerminal(asid, PRINTCHR, "\n");
 
-    printToTerm("ASID: ");
+    doIOTerminal(asid, PRINTCHR, "ASID: ");
     int_to_string(asid, str);
-    printToTerm(str);
-    printToTerm("\n");
+    doIOTerminal(asid, PRINTCHR, str);
+    doIOTerminal(asid, PRINTCHR, "\n");
 
-    printToTerm("Reading from flash\n");
+    doIOTerminal(asid, PRINTCHR, "Reading from flash\n");
 
-    printToTerm("Address: ");
-    int_to_string(flash_address, str);
-    printToTerm(str);
-    printToTerm("\n");
-
-    printToTerm("Command value: ");
-    int_to_string(command_value, str);
-    printToTerm(str);
-    printToTerm("\n");
-
-    // Troviamo l'indirizzo del campo COMMAND del device relativo all'ASID
-    unsigned int command_flash_address = flash_address + 0x4;
-
-    // Troviamo l'indirizzo del campo DATA0 del device relativo all'ASID 
-    // (In cui scrivere l'indirizzo di memoria in cui scrivere i dati letti dal device)
-    unsigned int data0_flash_address = command_flash_address + 0x4;
-
-    // Troviamo l'indirizzo iniziale della swap pool
-    void* swap_pool = (unsigned int*)swap_pool_address_base;
     // Troviamo l'indirizzo della pagina da rimuovere dalla memoria
-    unsigned int* return_position = swap_pool + (roundRobinPick * PAGESIZE);
-
-    // Scriviamo sul campo DATA0 l'indirizzo di memoria in cui scrivere i dati letti dal device
-    // (Essenzialmente stiamo scrivendo la pagina del device in swap pool)
-    *(unsigned int*)data0_flash_address = (unsigned int)return_position;
+    unsigned int return_position = swap_pool_address_base + (roundRobinPick * PAGESIZE);
 
     // Eseguiamo una DOIO tramite l'SSI per avviare la lettura della pagina
-    unsigned int exit_status = doIOtoFlash(command_flash_address, command_value);
+    unsigned int exit_status = doIOFlash(asid, vpn, FLASHREAD, return_position);
 
     // Se la lettura ha presentato un errore, stampiamo un messaggio di errore e terminiamo
     if (exit_status != 1){
-        printToTerm("Error in reading from flash\n");
+        doIOTerminal(asid, PRINTCHR, "Error reading from flash\n");
         programTrapHandler();
     }
 
     // Se siamo arrivati qui, la lettura è andata a buon fine e la pagina è stata caricata
     // nella swap pool
-
-    printToTerm("Exit status: ");
+    doIOTerminal(asid, PRINTCHR, "Exit status: ");
     int_to_string(exit_status, str);
-    printToTerm(str);
-    printToTerm("\n");
+    doIOTerminal(asid, PRINTCHR, str);
+    doIOTerminal(asid, PRINTCHR, "\n");
 
     // Stampa della pagina letta (per debug) sotto forma di interi
 
     for (int i = 0; i < 1000; i++){
-        int_to_string(return_position[i], str);
-        printToTerm(str);
+        int_to_string(((unsigned int*)return_position)[i], str);
+        doIOTerminal(asid, PRINTCHR, str);
     }
-    printToTerm("\n");
+    doIOTerminal(asid, PRINTCHR, "\n");
 
     // Aggiorniamo l'entry della swap table con i nuovi valori (della nuova pagina caricata)
     // Questa parte deve essere eseguita in modo atomico senza interruzioni, quindi salviamo

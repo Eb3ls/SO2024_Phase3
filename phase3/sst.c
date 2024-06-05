@@ -14,7 +14,7 @@ void terminate_process_sst(ssi_payload_t* payload, pcb_t* sender){
         .service_code = TERMPROCESS,
         .arg = NULL,
     };
-    // SYSCALL AL TEST PER NOTIFICARE LA MORTE
+    SYSCALL(SENDMESSAGE, (unsigned int)test_pcb, 0, 0);
     SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&term_process_payload), 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, 0, 0);
 }
@@ -24,29 +24,11 @@ void write_terminal_sst(ssi_payload_t* payload, pcb_t* sender, support_t* suppor
     unsigned int asid = support_structure->sup_asid;
     // Get the print structure
     sst_print_t* print = (sst_print_t*) payload->arg;
-    // Get the length of the message
-    unsigned int length = print->length;
     // Get the message
     char* msg = print->string;
 
-    unsigned int terminal_address = START_DEVREG + ((7 - 3) * 0x80) + ((asid - 1) * 0x10);
-    unsigned int command = terminal_address + 0xc;
-    unsigned int status;
+    doIOTerminal(asid, PRINTCHR, msg);
 
-    for (unsigned int i = 0; i < length; i++){
-        unsigned int value = PRINTCHR | (((unsigned int)*msg) << 8);
-        ssi_do_io_t do_io = {
-            .commandAddr = (memaddr*)command,
-            .commandValue = value,
-        };
-        ssi_payload_t payload = {
-            .service_code = DOIO,
-            .arg = &do_io,
-        };
-        SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&payload), 0);
-        SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&status), 0);
-        msg++;
-    }
     // Send the message to the sender
     SYSCALL(SENDMESSAGE, (unsigned int)sender, 0, 0);
 }

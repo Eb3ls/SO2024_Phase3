@@ -37,6 +37,20 @@ int findDevice(unsigned int devAddr){
 }
 
 
+int findDeviceV2(unsigned int devAddr){
+    unsigned int valore_puro = devAddr - START_DEVREG;
+    unsigned int devNo = (valore_puro % 128) / 16;
+    unsigned int line = (valore_puro - devNo) / 128;
+    if (line == 2){
+        line = 1;
+    }
+    if (line == 4){
+        // Per ora non consideriamo lo sdoppiamento dei terminali
+        devNo = devNo * 2;
+    }
+    return (8 * line) + devNo;
+}
+
 
 void SSI_function_entry_point(){
     while(1){
@@ -130,7 +144,7 @@ void doIO(struct pcb_t* sender, struct ssi_do_io_t* doio){
     softBlockCount++;
 
     unsigned int devAddr = ((unsigned int) doio->commandAddr - 0x4);
-    int index = findDevice(devAddr);
+    int index = findDeviceV2(devAddr);
 
     removeFromList(sender, sender->p_location);
     insertInList(sender, index);
