@@ -50,7 +50,7 @@ void test() {
 
     unsigned int stackPointer = swap_mutex_state.reg_sp;
 
-    for (int i = 1; i < 3; i++) {
+    for (int i = 1; i < 9; i++) {
         state_t* state = &uproc_state[i];
         support_t* support = &uproc_support[i];
 

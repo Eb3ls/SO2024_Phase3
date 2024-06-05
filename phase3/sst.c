@@ -16,8 +16,8 @@ void sst_entry() {
     uproc_state[asid].reg_sp = USERSTACKTOP;
     // State will be user mode, interrupts enabled, local timer enabled
     uproc_state[asid].status = ALLOFF | USERPON | IEPON | IECON | IMON | TEBITON;
-    uproc_state[asid].entry_hi = (1 << ASIDSHIFT);
-    uproc_state[asid].hi = (1 << ASIDSHIFT);
+    uproc_state[asid].entry_hi = (asid << ASIDSHIFT);
+    uproc_state[asid].hi = (asid << ASIDSHIFT);
 
     create_process(&uproc_state[asid], &uproc_support[asid]);
 
