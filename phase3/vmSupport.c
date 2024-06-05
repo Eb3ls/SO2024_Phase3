@@ -1,5 +1,6 @@
 #include "vmSupport.h"
 
+unsigned int swap_pool_address_base = RAMSTART + (32 * PAGESIZE);
 swap_t swapTable[2 * UPROCMAX];
 
 void initSwapStruct() {

@@ -4,25 +4,20 @@
 extern pcb_t* swap_mutex_pcb;
 static int roundRobinPick = 0;
 extern swap_t swapTable[2 * UPROCMAX];
-
 extern unsigned int swap_pool_address_base;
 
 void TLBInvalidHandler(support_t* support_struct){
-    state_t* exception_state = &(support_struct->sup_exceptState[0]);
-
-    unsigned int entryHi = exception_state->entry_hi;
+    unsigned int entryHi = support_struct->sup_exceptState[0].entry_hi;
 
     SYSCALL(SENDMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
 
-    // Get VPN
     unsigned int vpn = ((entryHi & GETPAGENO) >> VPNSHIFT);
 
     if (vpn > 31){
         vpn = 31;
     }
 
-    // Get ASID
     unsigned int asid = support_struct->sup_asid;
 
     // If the entry is occupied and dirty, swap it out
@@ -37,37 +32,13 @@ void TLBInvalidHandler(support_t* support_struct){
 
         // Bisogna scrivere la pagina in memoria secondaria
         // Bisogna capire bene come sostituire correttamente la pagina
-        // Verosimilmente bisogna prendere l'indirizzo del device, scrivere/leggere in DATA0 il dato
-        // da scrivere e poi inviare con l'SSI il comando per scrivere/leggere il dato`
-        // devregtr status;
-        // ssi_do_io_t do_io = {
-        //     .commandAddr = command,
-        //     .commandValue = value,
-        // };
-        // ssi_payload_t payload = {
-        //     .service_code = DOIO,
-        //     .arg = &do_io,
-        // };
-        // SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&payload), 0);
-        // SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&status), 0);
+        // Verosimilmente bisogna prendere l'indirizzo del device, scrivere in DATA0 il dato
+        // da scrivere e poi inviare con l'SSI il comando per scrivere il dato
     }
+
     // Se siamo arrivati qui significa che quella entry è libera, quindi possiamo 
     // caricare quello che ci pare
     // Leggiamo dal device la pagina da caricare
-
-    char str[20];
-
-    doIOTerminal(asid, PRINTCHR, "VPN: ");
-    int_to_string(vpn, str);
-    doIOTerminal(asid, PRINTCHR, str);
-    doIOTerminal(asid, PRINTCHR, "\n");
-
-    doIOTerminal(asid, PRINTCHR, "ASID: ");
-    int_to_string(asid, str);
-    doIOTerminal(asid, PRINTCHR, str);
-    doIOTerminal(asid, PRINTCHR, "\n");
-
-    doIOTerminal(asid, PRINTCHR, "Reading from flash\n");
 
     // Troviamo l'indirizzo della pagina da rimuovere dalla memoria
     unsigned int return_position = swap_pool_address_base + (roundRobinPick * PAGESIZE);
@@ -83,20 +54,7 @@ void TLBInvalidHandler(support_t* support_struct){
 
     // Se siamo arrivati qui, la lettura è andata a buon fine e la pagina è stata caricata
     // nella swap pool
-    doIOTerminal(asid, PRINTCHR, "Exit status: ");
-    int_to_string(exit_status, str);
-    doIOTerminal(asid, PRINTCHR, str);
-    doIOTerminal(asid, PRINTCHR, "\n");
-
-    // Stampa della pagina letta (per debug) sotto forma di interi
-
-    for (int i = 0; i < 1000; i++){
-        int_to_string(((unsigned int*)return_position)[i], str);
-        doIOTerminal(asid, PRINTCHR, str);
-    }
-    doIOTerminal(asid, PRINTCHR, "\n");
-
-    // Aggiorniamo l'entry della swap table con i nuovi valori (della nuova pagina caricata)
+    // A questo punto aggiorniamo l'entry della swap table con i nuovi valori (della nuova pagina caricata)
     // Questa parte deve essere eseguita in modo atomico senza interruzioni, quindi salviamo
     // lo stato del processore, disabilitiamo le interruzioni, aggiorniamo la swap table e
     // ripristiniamo lo stato del processore con SETSTATUS()
@@ -141,8 +99,7 @@ void TLBInvalidHandler(support_t* support_struct){
 
 void pageFaultHandler(){
     support_t* support_struct = getSupportStruct();
-    state_t* exception_state = &(support_struct->sup_exceptState[0]);
-    switch ((exception_state->cause & GETEXECCODE) >> CAUSESHIFT){
+    switch ((support_struct->sup_exceptState[0].cause & GETEXECCODE) >> CAUSESHIFT){
         case TLBINVLDL:
             TLBInvalidHandler(support_struct);
             break;
@@ -150,7 +107,6 @@ void pageFaultHandler(){
             TLBInvalidHandler(support_struct);
             break;
         default:
-            // "treat this case as a program trap"
             programTrapHandler();
             break;
     }
@@ -180,40 +136,37 @@ void SYSCALLExceptionHandler(support_t* support_struct){
     LDST(&(current_process->p_supportStruct->sup_exceptState[1]));
 }
 
-void programTrapHandler(){
-    // Abbiamo fatto questa ricerca del padre per killare sia il processo sia il padre (l'SST)
-    // assumendo che sia la cosa giusta da fare... Forse è meglio killare solo il processo
-    // ma a quel punto l'SST rimarrebbe in attesa di un messaggio che non arriverà mai
+void programTrapHandler() {
+    int parent_pid;
 
-    pcb_t* parent_pcb;
     ssi_payload_t payload = {
         .service_code = GETPROCESSID,
-        .arg = (void *)1,
+        .arg = (void*)1,
     };
     SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&payload), 0);
-    SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&parent_pcb), 0);
-    
+    SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&parent_pid), 0);
+
     ssi_payload_t term_process_payload = {
         .service_code = TERMPROCESS,
         .arg = NULL,
     };
-    if (parent_pcb != test_pcb){
-        term_process_payload.arg = parent_pcb;
+    if (parent_pid != test_pcb->p_pid) {
+        // Se entriamo qui significa che il padre è un SST
+        // Dobbiamo trovare un modo per killare sia il processo che il padre
+        // notificando il test
     }
     SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&term_process_payload), 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, 0, 0);
 }
 
-void generalExceptionHandler(){
+void generalExceptionHandler() {
     support_t* support_struct = getSupportStruct();
-    state_t* exception_state = &(support_struct->sup_exceptState[1]);
-    switch ((exception_state->cause & GETEXECCODE) >> CAUSESHIFT){
-        case SYSEXCEPTION:
-            SYSCALLExceptionHandler(current_process->p_supportStruct);
-            break;
-        default:
-            // "treat this case as a program trap"
-            programTrapHandler();
-            break;
+    switch ((support_struct->sup_exceptState[1].cause & GETEXECCODE) >> CAUSESHIFT) {
+    case SYSEXCEPTION:
+        SYSCALLExceptionHandler(current_process->p_supportStruct);
+        break;
+    default:
+        programTrapHandler();
+        break;
     }
 }
