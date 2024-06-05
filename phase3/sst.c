@@ -19,6 +19,20 @@ void terminate_process_sst(ssi_payload_t* payload, pcb_t* sender){
     SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, 0, 0);
 }
 
+void write_printer_sst(ssi_payload_t* payload, pcb_t* sender, support_t* support_structure){
+    // Get ASID
+    unsigned int asid = support_structure->sup_asid;
+    // Get the print structure
+    sst_print_t* print = (sst_print_t*) payload->arg;
+    // Get the message
+    char* msg = print->string;
+
+    doIOPrinter(asid, PRINTCHR, msg);
+
+    // Send the message to the sender
+    SYSCALL(SENDMESSAGE, (unsigned int)sender, 0, 0);
+}
+
 void write_terminal_sst(ssi_payload_t* payload, pcb_t* sender, support_t* support_structure){
     // Get ASID
     unsigned int asid = support_structure->sup_asid;
@@ -62,7 +76,7 @@ void sst_entry_point(){
                 terminate_process_sst(payload, sender);
                 break;
             case (WRITEPRINTER):
-                // Poi ci pensiamo
+                write_printer_sst(payload, sender, support_structure);
                 break;
             case (WRITETERMINAL):
                 write_terminal_sst(payload, sender, support_structure);

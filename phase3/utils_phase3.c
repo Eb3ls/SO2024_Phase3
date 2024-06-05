@@ -51,11 +51,24 @@ unsigned int doIOFlash(unsigned int asid, unsigned int vpn, unsigned int command
     return doIOSupportLevel(command_address, command_value);
 }
 
+unsigned int doIOPrinter(unsigned int asid, unsigned int command, char* msg) {
+    unsigned int device_address = START_DEVREG + ((6 - 3) * 0x80) + ((asid - 1) * 0x10);
+    unsigned int command_address = device_address + 0x4;
+    unsigned int data0_address = device_address + 0x8;
+    unsigned int command_value = command;
+    while (*msg != EOS) {
+        *(((unsigned int*)data0_address)) = *msg;
+        doIOSupportLevel(command_address, command_value);
+        msg++;
+    }
+    return 0;
+}
+
 unsigned int doIOTerminal(unsigned int asid, unsigned int command, char* msg) {
     // Calculate the terminal address
     unsigned int device_address = START_DEVREG + ((7 - 3) * 0x80) + ((asid - 1) * 0x10);
     unsigned int command_address;
-    if (command == PRINTCHR) {
+    if (command == TRANSMITCHAR) {
         command_address = device_address + 0xc;
     } else {
         command_address = device_address + 0x4;
