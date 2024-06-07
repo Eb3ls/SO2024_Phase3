@@ -7,9 +7,9 @@ state_t swap_mutex_state;
 pcb_t* swap_mutex_pcb;
 
 state_t uproc_state[9];
-pcb_t* uproc_pcb[9];
-
 support_t uproc_support[9];
+
+pcb_t* sst_pcb[9];
 
 unsigned int stackTLB_array[9][500];
 unsigned int stackGen_array[9][500];
@@ -61,7 +61,7 @@ void test() {
         state->status = ALLOFF | IEPON | IECON | IMON | TEBITON;
         state->entry_hi = i << ASIDSHIFT;
 
-        uproc_pcb[i] = create_process(state, support);
+        sst_pcb[i] = create_process(state, support);
     }
 
     int counter = 0;

@@ -3,7 +3,6 @@
 #include "sst_utils.h"
 
 extern state_t uproc_state[9];
-extern pcb_t* uproc_pcb[9];
 extern support_t uproc_support[9];
 
 void sst_entry() {
