@@ -6,6 +6,8 @@ static int roundRobinPick = 0;
 extern swap_t swapTable[2 * UPROCMAX];
 extern unsigned int swap_pool_address_base;
 
+extern pcb_t* sst_pcb[9];
+
 void TLBInvalidHandler(support_t* support_struct){
     unsigned int entryHi = support_struct->sup_exceptState[0].entry_hi;
 
@@ -49,7 +51,8 @@ void TLBInvalidHandler(support_t* support_struct){
     // Se la lettura ha presentato un errore, stampiamo un messaggio di errore e terminiamo
     if (exit_status != 1){
         doIOTerminal(asid, PRINTCHR, "Error reading from flash\n");
-        programTrapHandler();
+        SYSCALL(SENDMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
+        programTrapHandler(support_struct);
     }
 
     // Se siamo arrivati qui, la lettura è andata a buon fine e la pagina è stata caricata
@@ -107,7 +110,7 @@ void pageFaultHandler(){
             TLBInvalidHandler(support_struct);
             break;
         default:
-            programTrapHandler();
+            programTrapHandler(support_struct);
             break;
     }
 }
@@ -136,7 +139,21 @@ void SYSCALLExceptionHandler(support_t* support_struct){
     LDST(&(current_process->p_supportStruct->sup_exceptState[1]));
 }
 
-void programTrapHandler() {
+void programTrapHandler(support_t* support_struct) {
+    // Possiamo accedere a questa funzione da due punti:
+    // 1. Dall'esecuzione del programma (Non avevamo mutua esclusione)
+    // 2. Dalla gestione di un page fault (Ci siamo liberati di mutua esclusione prima di entrare)
+
+    // Inoltre possiamo essere in due situazioni:
+    // 1. Il processo è un processo utente
+    // 2. Il processo è un processo SST
+
+    // Se siamo un processo utente, dobbiamo chiedere all'SST di terminare il processo
+    // Se siamo l'SST assumiamo che il processo utente non abbia causato problemi dopo la
+    // qualunque richiesta all'SST.
+
+    // Quindi indipendentemente da tutto killiamo e basta perchè siamo tranquilli
+
     int parent_pid;
 
     ssi_payload_t payload = {
@@ -151,10 +168,11 @@ void programTrapHandler() {
         .arg = NULL,
     };
     if (parent_pid != test_pcb->p_pid) {
-        // Se entriamo qui significa che il padre è un SST
-        // Dobbiamo trovare un modo per killare sia il processo che il padre
-        // notificando il test
+        // Se entriamo qui significa che siamo un processo utente
+        SYSCALL(SENDMESSAGE, (unsigned int)(sst_pcb[support_struct->sup_asid]), (unsigned int)(&term_process_payload), 0);
+        SYSCALL(RECEIVEMESSAGE, (unsigned int)(sst_pcb[support_struct->sup_asid]), 0, 0);
     }
+    // Se arriviamo qui significa che siamo un SST
     SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&term_process_payload), 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, 0, 0);
 }
@@ -166,7 +184,7 @@ void generalExceptionHandler() {
         SYSCALLExceptionHandler(current_process->p_supportStruct);
         break;
     default:
-        programTrapHandler();
+        programTrapHandler(support_struct);
         break;
     }
 }
