@@ -3,50 +3,15 @@
 extern struct list_head pcbFree_h;
 
 int findDevice(unsigned int devAddr){
-    // This is used to convert the device address to the index on the blockedPCBs array
-    // in the doIO service
-    unsigned int devLine = devAddr - 0x10000054;
-    unsigned int devNo = devLine;
-    unsigned int line;
-
-    if(devLine >= LOCALTIMERINT && devLine < TIMERINTERRUPT){
-        line = 1;
-    }
-    else if(devLine >= TIMERINTERRUPT && devLine < DISKINTERRUPT){
-        line = 2;
-    }
-    else if(devLine >= DISKINTERRUPT && devLine < FLASHINTERRUPT){
-        line = 3;
-    }
-    else if(devLine >= FLASHINTERRUPT && devLine < PRINTINTERRUPT){
-        line = 4;
-        // In this part, the FLASHINTERRUPT and NETWORKINTERRUPT lines are combined
-        // because NETWORKINTERRUPT does not exist
-    }
-    else if(devLine >= PRINTINTERRUPT && devLine < TERMINTERRUPT){
-        line = 6;
-    }
-    else if(devLine >= TERMINTERRUPT){
-        line = 7;
-        devNo = (devNo - ((line - 3) * 0x80)) / 0x8;
-        return 8 * (line - 3) + devNo;
-    }
-    // Remove the line from the device address
-    devNo = (devNo - ((line - 3) * 0x80)) / 0x10;
-    return 8 * (line - 3) + devNo;
-}
-
-
-int findDeviceV2(unsigned int devAddr){
     unsigned int valore_puro = devAddr - START_DEVREG;
     unsigned int devNo = (valore_puro % 128) / 16;
     unsigned int line = (valore_puro - devNo) / 128;
-    if (line == 2){
-        line = 1;
-    }
+
     if (line == 4){
-        // Per ora non consideriamo lo sdoppiamento dei terminali
         devNo = devNo * 2;
+        if ((valore_puro % 16) == 0){
+            devNo = devNo + 1;
+        }
     }
     return (8 * line) + devNo;
 }
@@ -144,7 +109,7 @@ void doIO(struct pcb_t* sender, struct ssi_do_io_t* doio){
     softBlockCount++;
 
     unsigned int devAddr = ((unsigned int) doio->commandAddr - 0x4);
-    int index = findDeviceV2(devAddr);
+    int index = findDevice(devAddr);
 
     removeFromList(sender, sender->p_location);
     insertInList(sender, index);
