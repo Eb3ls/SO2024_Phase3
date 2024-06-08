@@ -3,7 +3,6 @@
 #include "sst_utils.h"
 
 extern state_t uproc_state[9];
-extern support_t uproc_support[9];
 
 void sst_entry() {
     support_t* support_struct = getSupportStruct();
@@ -18,7 +17,7 @@ void sst_entry() {
     uproc_state[asid].entry_hi = (asid << ASIDSHIFT);
     uproc_state[asid].hi = (asid << ASIDSHIFT);
 
-    create_process(&uproc_state[asid], &uproc_support[asid]);
+    create_process(&uproc_state[asid], support_struct);
 
     ssi_payload_t* payload;
 
