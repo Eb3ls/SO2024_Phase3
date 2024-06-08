@@ -32,10 +32,18 @@ void TLBInvalidHandler(support_t* support_struct){
 
         setSTATUS(current_processor_status);
 
-        // Bisogna scrivere la pagina in memoria secondaria
-        // Bisogna capire bene come sostituire correttamente la pagina
-        // Verosimilmente bisogna prendere l'indirizzo del device, scrivere in DATA0 il dato
-        // da scrivere e poi inviare con l'SSI il comando per scrivere il dato
+        // Troviamo l'indirizzo della pagina da rimuovere dalla memoria
+        unsigned int return_position = swap_pool_address_base + (roundRobinPick * PAGESIZE);
+
+        // Eseguiamo una DOIO tramite l'SSI per avviare la scrittura della pagina
+        unsigned int exit_status = doIOFlash(swapTable[roundRobinPick].sw_asid, swapTable[roundRobinPick].sw_pageNo, FLASHWRITE, return_position);
+
+        // Se la scrittura ha presentato un errore, stampiamo un messaggio di errore e terminiamo
+        if (exit_status != 1){
+            doIOTerminal(swapTable[roundRobinPick].sw_asid, PRINTCHR, "Error writing to flash\n");
+            SYSCALL(SENDMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
+            programTrapHandler(support_struct);
+        }
     }
 
     // Se siamo arrivati qui significa che quella entry è libera, quindi possiamo 
