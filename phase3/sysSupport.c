@@ -31,7 +31,15 @@ void TLBInvalidHandler(support_t* support_struct){
         setSTATUS(ALLOFF);
 
         swapTable[roundRobinPick].sw_pte->pte_entryLO = swapTable[roundRobinPick].sw_pte->pte_entryLO & (!VALIDON);
-        TLBCLR();
+
+        // Set the TLB entry
+        setENTRYHI(swapTable[roundRobinPick].sw_pte->pte_entryHI);
+        TLBP();
+        if ((getINDEX() & PRESENTFLAG) == 0){
+            setENTRYHI(swapTable[roundRobinPick].sw_pte->pte_entryHI);
+            setENTRYLO(swapTable[roundRobinPick].sw_pte->pte_entryLO);
+            TLBWI();
+        }
 
         setSTATUS(current_processor_status);
 
@@ -88,11 +96,14 @@ void TLBInvalidHandler(support_t* support_struct){
     unsigned int pfn = (((unsigned int)return_position) >> 12);
     support_struct->sup_privatePgTbl[vpn].pte_entryLO = (pfn << 12) | DIRTYON | VALIDON;
 
-    // Setting the TLB entry
-    TLBCLR();
+    // Set the TLB entry
     setENTRYHI(support_struct->sup_privatePgTbl[vpn].pte_entryHI);
-    setENTRYLO(support_struct->sup_privatePgTbl[vpn].pte_entryLO);
-    TLBWR();
+    TLBP();
+    if ((getINDEX() & PRESENTFLAG) == 0){
+        setENTRYHI(support_struct->sup_privatePgTbl[vpn].pte_entryHI);
+        setENTRYLO(support_struct->sup_privatePgTbl[vpn].pte_entryLO);
+        TLBWI();
+    }
 
     setSTATUS(current_processor_status);
 
