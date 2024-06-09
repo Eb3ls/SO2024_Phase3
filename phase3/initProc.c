@@ -21,7 +21,7 @@ void test() {
     STST(&swap_mutex_state);
     swap_mutex_state.reg_sp -= (2 * PAGESIZE);
     swap_mutex_state.pc_epc = (memaddr)swapMutex_entry_point;
-    swap_mutex_state.status = ALLOFF | IEPON | IMON;
+    swap_mutex_state.status = ALLOFF | IEPON | IECON | IMON | TEBITON;
 
     swap_mutex_pcb = create_process(&swap_mutex_state, NULL);
 
