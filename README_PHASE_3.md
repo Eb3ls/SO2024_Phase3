@@ -51,7 +51,7 @@ A loro volta questi casi si diramano in ulteriori 2:
 1. Il processo che ha scatenato l'eccezione è un processo utente.
 2. Il processo che ha scatenato l'eccezione è un SST.
 
-Se il processo è processo utente assumiamo che abbia causato l'eccezione direttamente dall'esecuzione del codice.
+Se il processo è processo utente assumiamo che abbia causato l'eccezione direttamente dall'esecuzione del codice oppure abbia appena rilasciato la mutua esclusione uscendo da un page fault.
 Se il processo è un SST, assumiamo che il processo utente non abbia mutua esclusione poichè sta aspettando la risposta dell'SST.
 
 Con queste assunzioni, possiamo dividere l'approccio in 2 casi:
@@ -65,6 +65,6 @@ Il processo test si occupa di inizializzare il processo swap_mutex (che garantir
 1. Inizializzazione swap_mutex: in questa parte, a seguito dell'inizializzazione dei campi relativi all'asid, al vpn e al pte di ogni entry della swap table (eseguita attraverso la funzione initSwapStruct), il processo test si occupa di inizializzare lo stato dello swap_mutex. Lo stack pointer di questo processo viene distanziato di due frame da quello del processo test, il program counter indirizzato alla funzione di entry point dello swap_mutex e lo status impostato con interrupt abilitati (e ovviamente Kernel mode).
 2. Inizializzazione delle strutture di supporto: per ogni processo utente il tester provvede ad inizializzare i campi della relativa struttura di supporto e in particolare quelli del contesto di eccezione, in base quindi a un eccezione generale o di page fault. Per affrontare separatamente questi due casi, vengono inizialmente generati due stack per ogni processo utente: stackTLB e stackGen. A questi punterà lo stack pointer della struttura di supporto rispettivamente nel contesto di page fault ed eccezione generale. La distinzione in base al contesto viene trattata analogamente anche per l'assegnamento del program counter che nel primo caso punterà alla funzione pageFaultHandler e nel secondo alla funzione generalExeptionHandler.
 Infine per ogni struttura di supporto viene inizializzata la page table privata, inserendo per ogni entry i corretti VPN e ASID e settandone il bit di controllo a DIRTY. 
-3. Inizializzazione dei processi SST: per ogni processo utente viene istanziato il corrispondente SST che condividerà con il processo figlio sia lo stato che la struttura di supporto. Lo stack pointer, analogamente a quanto fatto per lo swap_mutex, viene distanziato di due frame da quest'ultimo; il program counter punta alla funzione sst_entry; lo status prevede kernel mode, interrupt e local timer abilitati.
+3. Inizializzazione dei processi SST: per ogni processo utente viene istanziato il corrispondente SST che condividerà con il processo figlio la struttura di supporto. Lo stack pointer, analogamente a quanto fatto per lo swap_mutex, viene distanziato di due frame da quest'ultimo; il program counter punta alla funzione sst_entry; lo status prevede kernel mode, interrupt e local timer abilitati.
 
 In seguito a queste operazioni il processo test attende un messaggio dagli 8 processi generati e successivamente richiede all'SSI di essere terminato.

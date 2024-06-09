@@ -17,15 +17,15 @@ unsigned int stackGen_array[9][500];
 void test() {
     initSwapStruct();
 
-    // Inizializzazione del processo Swap Mutex
+    // Initialization of the Swap Mutex process
     STST(&swap_mutex_state);
-    swap_mutex_state.reg_sp -= (2 * PAGESIZE); // Non sappiamo bene quanto lasciare di spazio per lo stack pointer tra un processo e l'altro
+    swap_mutex_state.reg_sp -= (2 * PAGESIZE);
     swap_mutex_state.pc_epc = (memaddr)swapMutex_entry_point;
     swap_mutex_state.status = ALLOFF | IEPON | IMON;
 
     swap_mutex_pcb = create_process(&swap_mutex_state, NULL);
 
-    // Inizializzazione delle strutture di supporto
+    // Initialization of support structures
     for (int i = 1; i < 9; i++) {
         support_t* support_struct = &uproc_support[i];
         support_struct->sup_asid = i;
@@ -46,8 +46,7 @@ void test() {
         support_struct->sup_privatePgTbl[31].pte_entryLO = DIRTYON;
     }
 
-    // Inizializzazione dei processi SST
-
+    // Initialization of SST processes
     unsigned int stackPointer = swap_mutex_state.reg_sp;
 
     for (int i = 1; i < 9; i++) {

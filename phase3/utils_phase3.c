@@ -51,7 +51,8 @@ unsigned int doIOFlash(unsigned int asid, unsigned int vpn, unsigned int command
     return doIOSupportLevel(command_address, command_value);
 }
 
-unsigned int doIOPrinter(unsigned int asid, unsigned int command, char* msg) {
+void doIOPrinter(unsigned int asid, unsigned int command, char* msg) {
+    // Calculate the printer address
     unsigned int device_address = START_DEVREG + ((6 - 3) * 0x80) + ((asid - 1) * 0x10);
     unsigned int command_address = device_address + 0x4;
     unsigned int data0_address = device_address + 0x8;
@@ -61,10 +62,9 @@ unsigned int doIOPrinter(unsigned int asid, unsigned int command, char* msg) {
         doIOSupportLevel(command_address, command_value);
         msg++;
     }
-    return 0;
 }
 
-unsigned int doIOTerminal(unsigned int asid, unsigned int command, char* msg) {
+void doIOTerminal(unsigned int asid, unsigned int command, char* msg) {
     // Calculate the terminal address
     unsigned int device_address = START_DEVREG + ((7 - 3) * 0x80) + ((asid - 1) * 0x10);
     unsigned int command_address;
@@ -76,71 +76,6 @@ unsigned int doIOTerminal(unsigned int asid, unsigned int command, char* msg) {
     while (*msg != EOS) {
         unsigned int command_value = (((unsigned int)*msg) << 8) | command;
         doIOSupportLevel(command_address, command_value);
-        msg++;
-    }
-    return 0;
-}
-
-void int_to_string(int num, char* str) {
-    int i = 0;
-    int isNegative = 0;
-
-    /* Handle 0 explicitly, otherwise empty string is printed for 0 */
-    if (num == 0) {
-        str[i++] = '0';
-        str[i] = '\0';
-        return;
-    }
-
-    // In standard itoa(), negative numbers are handled only with base 10.
-    // Otherwise numbers are considered unsigned.
-    if (num < 0) {
-        isNegative = 1;
-        num = -num;
-    }
-
-    // Process individual digits
-    while (num != 0) {
-        int rem = num % 10;
-        str[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
-        num = num / 10;
-    }
-
-    // If number is negative, append '-'
-    if (isNegative)
-        str[i++] = '-';
-
-    str[i] = '\0'; // Append string terminator
-
-    // Reverse the string
-    int start = 0;
-    int end = i - 1;
-    while (start < end) {
-        char temp = str[start];
-        str[start] = str[end];
-        str[end] = temp;
-        start++;
-        end--;
-    }
-}
-
-void printToTerm(char* msg) {
-    unsigned int* base = (unsigned int*)(0x10000254);
-    unsigned int* command = base + 3;
-    unsigned int status;
-
-    while (*msg != EOS) {
-        unsigned int value = PRINTCHR | (((unsigned int)*msg) << 8);
-        ssi_do_io_t do_io = {
-            .commandAddr = command,
-            .commandValue = value,
-        };
-        ssi_payload_t payload = {
-            .service_code = DOIO,
-            .arg = &do_io,
-        };
-        SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&payload), 0);
-        SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&status), 0);
         msg++;
     }
 }

@@ -22,6 +22,9 @@ void TLBInvalidHandler(support_t* support_struct){
 
     unsigned int asid = support_struct->sup_asid;
 
+    // Find the address of the page to be removed from memory
+    unsigned int return_position = swap_pool_address_base + (roundRobinPick * PAGESIZE);
+
     // If the entry is occupied and dirty, swap it out
     if (swapTable[roundRobinPick].sw_asid != -1 && (((swapTable[roundRobinPick].sw_pte)->pte_entryLO & DIRTYON) == DIRTYON)){
         unsigned int current_processor_status = ((state_t*) BIOSDATAPAGE)->status;
@@ -32,13 +35,11 @@ void TLBInvalidHandler(support_t* support_struct){
 
         setSTATUS(current_processor_status);
 
-        // Troviamo l'indirizzo della pagina da rimuovere dalla memoria
-        unsigned int return_position = swap_pool_address_base + (roundRobinPick * PAGESIZE);
-
-        // Eseguiamo una DOIO tramite l'SSI per avviare la scrittura della pagina
+        // Perform a DOIO via the SSI to initiate page write
         unsigned int exit_status = doIOFlash(swapTable[roundRobinPick].sw_asid, swapTable[roundRobinPick].sw_pageNo, FLASHWRITE, return_position);
 
-        // Se la scrittura ha presentato un errore, stampiamo un messaggio di errore e terminiamo
+        // If the write operation encountered an error, print an error message, release
+        // mutual exclusion and terminate
         if (exit_status != 1){
             doIOTerminal(swapTable[roundRobinPick].sw_asid, PRINTCHR, "Error writing to flash\n");
             SYSCALL(SENDMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
@@ -46,29 +47,27 @@ void TLBInvalidHandler(support_t* support_struct){
         }
     }
 
-    // Se siamo arrivati qui significa che quella entry è libera, quindi possiamo 
-    // caricare quello che ci pare
-    // Leggiamo dal device la pagina da caricare
+    // If we have reached this point, it means that the entry is free, so we can
+    // load the page from the flash into the swap pool
 
-    // Troviamo l'indirizzo della pagina da rimuovere dalla memoria
-    unsigned int return_position = swap_pool_address_base + (roundRobinPick * PAGESIZE);
-
-    // Eseguiamo una DOIO tramite l'SSI per avviare la lettura della pagina
+    // Perform a DOIO via the SSI to initiate page read
     unsigned int exit_status = doIOFlash(asid, vpn, FLASHREAD, return_position);
 
-    // Se la lettura ha presentato un errore, stampiamo un messaggio di errore e terminiamo
+    // If the read operation encountered an error, print an error message, release
+    // mutual exclusion and terminate
     if (exit_status != 1){
         doIOTerminal(asid, PRINTCHR, "Error reading from flash\n");
         SYSCALL(SENDMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
         programTrapHandler(support_struct);
     }
 
-    // Se siamo arrivati qui, la lettura è andata a buon fine e la pagina è stata caricata
-    // nella swap pool
-    // A questo punto aggiorniamo l'entry della swap table con i nuovi valori (della nuova pagina caricata)
-    // Questa parte deve essere eseguita in modo atomico senza interruzioni, quindi salviamo
-    // lo stato del processore, disabilitiamo le interruzioni, aggiorniamo la swap table e
-    // ripristiniamo lo stato del processore con SETSTATUS()
+    // If we have reached this point, it means that the read operation was successful and the page 
+    // has been loaded into the swap pool
+
+    // So we have to update the entry in the swap table with the new values (of the newly loaded page)
+    // This part needs to be executed atomically without interrupts, so we save
+    // the processor state, disable interrupts, update the swap table, and
+    // restore the processor state with SETSTATUS()
 
     unsigned int current_processor_status = ((state_t*) BIOSDATAPAGE)->status;
     setSTATUS(ALLOFF);
@@ -77,23 +76,19 @@ void TLBInvalidHandler(support_t* support_struct){
     swapTable[roundRobinPick].sw_pageNo = vpn;
     swapTable[roundRobinPick].sw_pte = &(support_struct->sup_privatePgTbl[vpn]);
 
-    // Adesso dobbiamo aggiornare la entry della pagina privata del processo
+    // Now we need to update the entry of the process's private page table
 
-    // Settiamo l'entryHI della pagina
-    // Questa riga è ridondante, ma la lascio per chiarezza
+    // Set the entryHI of the page
+    // This line is probably redundant:
     // support_struct->sup_privatePgTbl[vpn].pte_entryHI = (entryHi >> VPNSHIFT) << VPNSHIFT | (asid << ASIDSHIFT);
 
-    // Settiamo l'entryLO della pagina
-    // Da specifiche dobbiamo settare i bit di validità e dirty
-    // Inoltre dobbiamo fornire la parte più significativa (PFN) dell'indirizzo fisico della pagina
-    // in memoria, per far si che il TLB possa tradurre correttamente l'indirizzo virtuale
-    // in indirizzo fisico
-    // ESEMPIO: Indirizzo fisico in swap pool: 0x20020030 => PFN = 0x20020 e VPN = 0x030
-    // Quindi puliamo l'indirizzo fisico da i 12 bit meno significativi
+    // Set the entryLO of the page
+    // We have to set the VALIDON and DIRTYON bits
+    // and also set the pfn of the page
     unsigned int pfn = (((unsigned int)return_position) >> 12);
     support_struct->sup_privatePgTbl[vpn].pte_entryLO = (pfn << 12) | DIRTYON | VALIDON;
 
-    // Settiamo la entry della TLB
+    // Setting the TLB entry
     TLBCLR();
     setENTRYHI(support_struct->sup_privatePgTbl[vpn].pte_entryHI);
     setENTRYLO(support_struct->sup_privatePgTbl[vpn].pte_entryLO);
@@ -101,7 +96,7 @@ void TLBInvalidHandler(support_t* support_struct){
 
     setSTATUS(current_processor_status);
 
-    // Aumentiamo il round robin pick per la prossima volta
+    // Increase the round robin pick for the next round
     roundRobinPick = (roundRobinPick + 1) % (2 * UPROCMAX);
 
     SYSCALL(SENDMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
@@ -148,19 +143,17 @@ void SYSCALLExceptionHandler(support_t* support_struct){
 }
 
 void programTrapHandler(support_t* support_struct) {
-    // Possiamo accedere a questa funzione da due punti:
-    // 1. Dall'esecuzione del programma (Non avevamo mutua esclusione)
-    // 2. Dalla gestione di un page fault (Ci siamo liberati di mutua esclusione prima di entrare)
+    // We can access this function from two points:
+    // 1. From program execution (We didn't have mutual exclusion)
+    // 2. From handling a page fault (We released mutual exclusion before entering)
 
-    // Inoltre possiamo essere in due situazioni:
-    // 1. Il processo è un processo utente
-    // 2. Il processo è un processo SST
+    // Furthermore, we can be in two situations:
+    // 1. The process is a user process
+    // 2. The process is an SST process
 
-    // Se siamo un processo utente, dobbiamo chiedere all'SST di terminare il processo
-    // Se siamo l'SST assumiamo che il processo utente non abbia causato problemi dopo la
-    // qualunque richiesta all'SST.
-
-    // Quindi indipendentemente da tutto killiamo e basta perchè siamo tranquilli
+    // If we are a user process, we need to ask the SST to terminate the process
+    // If we are the SST, we assume that the user process did not cause any page fault
+    // after the request to the SST.
 
     int parent_pid;
 
@@ -176,11 +169,11 @@ void programTrapHandler(support_t* support_struct) {
         .arg = NULL,
     };
     if (parent_pid != test_pcb->p_pid) {
-        // Se entriamo qui significa che siamo un processo utente
+        // If we enter here, it means that we are a user process
         SYSCALL(SENDMESSAGE, (unsigned int)(sst_pcb[support_struct->sup_asid]), (unsigned int)(&term_process_payload), 0);
         SYSCALL(RECEIVEMESSAGE, (unsigned int)(sst_pcb[support_struct->sup_asid]), 0, 0);
     }
-    // Se arriviamo qui significa che siamo un SST
+    // If we reach this point, it means that we are an SST
     SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&term_process_payload), 0);
     SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, 0, 0);
 }
