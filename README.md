@@ -37,4 +37,4 @@ Open uMPS3, create a new machine, load `kernel.core.umps`, and configure the dev
 
 ## Authors
 
-Davide Sarti, Francesco Tramontana, Leonardo Berselli, Francesco Tomba — Bachelor's in Computer Science, University of Bologna (2024)
+Davide Sarti, Francesco Ciofini, Leonardo Berselli, Francesco Tomba — Bachelor's in Computer Science, University of Bologna (2024)
