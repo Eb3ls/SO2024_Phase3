@@ -30,7 +30,7 @@ void TLBInvalidHandler(support_t* support_struct){
         unsigned int current_processor_status = ((state_t*) BIOSDATAPAGE)->status;
         setSTATUS(ALLOFF);
 
-        swapTable[roundRobinPick].sw_pte->pte_entryLO = swapTable[roundRobinPick].sw_pte->pte_entryLO & (!VALIDON);
+        swapTable[roundRobinPick].sw_pte->pte_entryLO = swapTable[roundRobinPick].sw_pte->pte_entryLO & (~VALIDON);
 
         // Set the TLB entry
         setENTRYHI(swapTable[roundRobinPick].sw_pte->pte_entryHI);
