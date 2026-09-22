@@ -51,20 +51,19 @@ unsigned int doIOFlash(unsigned int asid, unsigned int vpn, unsigned int command
     return doIOSupportLevel(command_address, command_value);
 }
 
-void doIOPrinter(unsigned int asid, unsigned int command, char* msg) {
+void doIOPrinter(unsigned int asid, unsigned int command, char* msg, int length) {
     // Calculate the printer address
     unsigned int device_address = START_DEVREG + ((6 - 3) * 0x80) + ((asid - 1) * 0x10);
     unsigned int command_address = device_address + 0x4;
     unsigned int data0_address = device_address + 0x8;
     unsigned int command_value = command;
-    while (*msg != EOS) {
-        *(((unsigned int*)data0_address)) = *msg;
+    for (int i = 0; i < length; i++) {
+        *(((unsigned int*)data0_address)) = msg[i];
         doIOSupportLevel(command_address, command_value);
-        msg++;
     }
 }
 
-void doIOTerminal(unsigned int asid, unsigned int command, char* msg) {
+void doIOTerminal(unsigned int asid, unsigned int command, char* msg, int length) {
     // Calculate the terminal address
     unsigned int device_address = START_DEVREG + ((7 - 3) * 0x80) + ((asid - 1) * 0x10);
     unsigned int command_address;
@@ -73,9 +72,8 @@ void doIOTerminal(unsigned int asid, unsigned int command, char* msg) {
     } else {
         command_address = device_address + 0x4;
     }
-    while (*msg != EOS) {
-        unsigned int command_value = (((unsigned int)*msg) << 8) | command;
+    for (int i = 0; i < length; i++) {
+        unsigned int command_value = (((unsigned int)msg[i]) << 8) | command;
         doIOSupportLevel(command_address, command_value);
-        msg++;
     }
 }

@@ -19,12 +19,12 @@ void terminate_sst() {
 
 void writePrinter_sst(pcb_t* sender, unsigned int asid, sst_print_t* payload) {
     char* msg = payload->string;
-    doIOPrinter(asid, PRINTCHR, msg);
+    doIOPrinter(asid, PRINTCHR, msg, payload->length);
     SYSCALL(SENDMESSAGE, (unsigned int)sender, 0, 0);
 }
 
 void writeTerminal_sst(pcb_t* sender, unsigned int asid, sst_print_t* payload) {
     char* msg = payload->string;
-    doIOTerminal(asid, TRANSMITCHAR, msg);
+    doIOTerminal(asid, TRANSMITCHAR, msg, payload->length);
     SYSCALL(SENDMESSAGE, (unsigned int)sender, 0, 0);
 }

@@ -4,7 +4,10 @@
 
 # Build artifacts
 *.o
+*.d
 *.s
+/kernel
+/testers/*.t
 
 # Test output
 output.txt

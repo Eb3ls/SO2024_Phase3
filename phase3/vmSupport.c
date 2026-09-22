@@ -12,7 +12,6 @@ void initSwapStruct() {
 }
 
 void swapMutex_entry_point() {
-    SYSCALL(SENDMESSAGE, (unsigned int)test_pcb, 0, 0);
     pcb_t* sender;
     while (1) {
         sender = (pcb_t*) SYSCALL(RECEIVEMESSAGE, ANYMESSAGE, 0, 0);

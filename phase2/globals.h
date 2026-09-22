@@ -5,7 +5,7 @@
 #include "../phase1/headers/pcb.h"
 #include "../phase1/headers/msg.h"
 
-#include "/usr/include/umps3/umps/libumps.h"
+#include <umps/libumps.h>
 
 // Global variables
 extern int process_count;

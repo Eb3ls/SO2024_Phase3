@@ -1,0 +1,23 @@
+name: Build and regression tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install MIPS and uMPS3 dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y gcc-mipsel-linux-gnu umps3
+      - name: Build kernel and user programs
+        run: make -j2
+      - name: Run host regression tests
+        run: make test
