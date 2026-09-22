@@ -7,23 +7,16 @@ else
 	UMPS3_DIR_PREFIX = /usr/local
 endif
 
-LIBDIR = $(UMPS3_DIR_PREFIX)/lib/umps3
-INCDIR = $(UMPS3_DIR_PREFIX)/include/umps3/umps
 SUPDIR = $(UMPS3_DIR_PREFIX)/share/umps3
 UMPS3_DATA_DIR = $(UMPS3_DIR_PREFIX)/share/umps3
 UMPS3_INCLUDE_DIR = $(UMPS3_DIR_PREFIX)/include/umps3
 
-TDEFS = h/print.h h/tconst.h h/types.h $(INCDIR)/libumps.e Makefile
-
-CFLAGS = -ffreestanding -c -mips1 -mabi=32 -mfp32 -mno-gpopt -G 0 -fno-pic -mno-abicalls -I$(UMPS3_INCLUDE_DIR)
-# -Wall
+CFLAGS = -ffreestanding -c -mips1 -mabi=32 -mfp32 -mno-gpopt -G 0 -fno-pic -mno-abicalls -I$(UMPS3_INCLUDE_DIR) -Wall -MMD -MP
 
 LDAOUTFLAGS = -G 0 -nostdlib -T $(SUPDIR)/umpsaout.ldscript
-LDCOREFLAGS =  -G 0 -nostdlib -T $(SUPDIR)/umpscore.ldscript
-
-CC = mipsel-linux-gnu-gcc
-LD = mipsel-linux-gnu-ld
-AS = mipsel-linux-gnu-as -KPIC
+XT_PRG_PREFIX ?= mipsel-linux-gnu-
+CC = $(XT_PRG_PREFIX)gcc
+LD = $(XT_PRG_PREFIX)ld
 
 EF = umps3-elf2umps
 UDEV = umps3-mkdev
@@ -31,8 +24,13 @@ UDEV = umps3-mkdev
 # Add the location of crt*.S to the search path
 VPATH = $(UMPS3_DATA_DIR)
 
-#main target
-all: todTest.umps terminalTest1.umps terminalTest2.umps terminalTest3.umps terminalTest4.umps fibEight.umps fibEleven.umps printerTest.umps
+TESTS = todTest terminalTest1 terminalTest2 terminalTest3 terminalTest4 fibEight fibEleven printerTest
+OBJECTS = $(TESTS:=.o) print.o crti.o libumps.o
+
+.PHONY: all clean
+all: $(TESTS:=.umps)
+
+.SECONDARY: $(OBJECTS) $(TESTS:=.t) $(TESTS:=.t.aout.umps)
 
 # Pattern rule for assembly modules
 %.o : %.S
@@ -48,5 +46,6 @@ all: todTest.umps terminalTest1.umps terminalTest2.umps terminalTest3.umps termi
 	$(UDEV) -f $@ $<
 
 clean:
-	rm -f *.o *.t *.umps
+	rm -f *.o *.d *.t *.umps
 
+-include $(OBJECTS:.o=.d)

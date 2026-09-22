@@ -91,7 +91,12 @@ void terminateProcess(struct pcb_t* sender, struct pcb_t* arg){
         terminateProcess(child, NULL);
     }
 
-    removeFromList(to_delete, to_delete->p_location);
+    signed short int location = to_delete->p_location;
+    if (location == WAITINGCLOCK_LOCATION ||
+        (location >= 0 && location < SEMDEVLEN - 1)) {
+        softBlockCount--;
+    }
+    removeFromList(to_delete, location);
 
     pcb_t* pcbInFree = outProcQ(&pcbFree_h, to_delete);
     if (pcbInFree == NULL){

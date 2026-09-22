@@ -1,4 +1,5 @@
 #include "sysSupport.h"
+#include "sst_utils.h"
 #include "utils_phase3.h"
 
 extern pcb_t* swap_mutex_pcb;
@@ -49,7 +50,8 @@ void TLBInvalidHandler(support_t* support_struct){
         // If the write operation encountered an error, print an error message, release
         // mutual exclusion and terminate
         if (exit_status != 1){
-            doIOTerminal(swapTable[roundRobinPick].sw_asid, PRINTCHR, "Error writing to flash\n");
+            doIOTerminal(swapTable[roundRobinPick].sw_asid, PRINTCHR,
+                         "Error writing to flash\n", sizeof("Error writing to flash\n") - 1);
             SYSCALL(SENDMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
             programTrapHandler(support_struct);
         }
@@ -64,7 +66,8 @@ void TLBInvalidHandler(support_t* support_struct){
     // If the read operation encountered an error, print an error message, release
     // mutual exclusion and terminate
     if (exit_status != 1){
-        doIOTerminal(asid, PRINTCHR, "Error reading from flash\n");
+        doIOTerminal(asid, PRINTCHR,
+                     "Error reading from flash\n", sizeof("Error reading from flash\n") - 1);
         SYSCALL(SENDMESSAGE, (unsigned int)swap_mutex_pcb, 0, 0);
         programTrapHandler(support_struct);
     }
@@ -184,9 +187,10 @@ void programTrapHandler(support_t* support_struct) {
         SYSCALL(SENDMESSAGE, (unsigned int)(sst_pcb[support_struct->sup_asid]), (unsigned int)(&term_process_payload), 0);
         SYSCALL(RECEIVEMESSAGE, (unsigned int)(sst_pcb[support_struct->sup_asid]), 0, 0);
     }
-    // If we reach this point, it means that we are an SST
-    SYSCALL(SENDMESSAGE, (unsigned int)ssi_pcb, (unsigned int)(&term_process_payload), 0);
-    SYSCALL(RECEIVEMESSAGE, (unsigned int)ssi_pcb, 0, 0);
+    else {
+        // The SST must notify test before asking the SSI to tear it down.
+        terminate_sst();
+    }
 }
 
 void generalExceptionHandler() {
