@@ -24,10 +24,10 @@ This is Phase 3, which adds demand paging and isolated user-space processes on t
 
 ## Requirements
 
-- [uMPS3](https://github.com/virtualsquare/umps3), including its headers, startup code, ROMs, `umps3-elf2umps`, and `umps3-mkdev`
+- [uMPS3](https://github.com/virtualsquare/umps3) **3.0.5**, including its headers, startup code, ROMs, `umps3-elf2umps`, and `umps3-mkdev`
 - `mipsel-linux-gnu` GCC and binutils, plus GNU Make
 
-On Ubuntu 22.04, the dependencies are available as packages:
+On Ubuntu 24.04, the dependencies are available as packages:
 
 ```bash
 sudo apt update
@@ -78,7 +78,7 @@ Start execution in the simulator. All eight user programs should finish, then th
 make test
 ```
 
-The host regression tests require **x86-64 Linux**, a native C compiler, and the uMPS3 headers. They use Linux memory mappings to exercise the kernel's 32-bit pointer interface. The tests check process completion, bounded printer/terminal writes, and blocked-process accounting using the repository's C functions with hardware calls stubbed. `HOST_CC` selects the native compiler; `UMPS3_DIR_PREFIX` selects the uMPS3 installation as above.
+The host regression tests require **x86-64 Linux**, a native C compiler, and the uMPS3 3.0.5 headers. Older uMPS3 headers use a nonstandard `NULL` sentinel that conflicts with the native C library in these tests. They use Linux memory mappings to exercise the kernel's 32-bit pointer interface. The tests check process completion, bounded printer/terminal writes, and blocked-process accounting using the repository's C functions with hardware calls stubbed. `HOST_CC` selects the native compiler; `UMPS3_DIR_PREFIX` selects the uMPS3 installation as above.
 
 GitHub Actions builds the MIPS kernel and all user programs and runs these regression tests. Host tests and a successful cross-compilation do not replace executing the full kernel in uMPS3; the simulator checks above cover that separate step.
 
